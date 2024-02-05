@@ -39,13 +39,16 @@ type
 
   TAWSResponse = THTTPResponse;
 
+  { TAWSClient }
+
   TAWSClient = class sealed(TInterfacedObject, IAWSClient)
   private
     FSignature: IAWSSignature;
-    function MakeURL(const SubDomain, Domain, Query: string): string;
+    FServiceName: String;
+    function MakeURL(const SubDomain, Domain, SubResource, Query: string): string;
   public
-    constructor Create(Signature: IAWSSignature);
-    class function New(Signature: IAWSSignature): IAWSClient;
+    constructor Create(Signature: IAWSSignature; ServiceName: string);
+    class function New(Signature: IAWSSignature; ServiceName: string): IAWSClient;
     function Send(Request: IAWSRequest): IAWSResponse;
   end;
 
@@ -53,7 +56,10 @@ implementation
 
 { TAWSClient }
 
-function TAWSClient.MakeURL(const SubDomain, Domain, Query: string): string;
+function TAWSClient.MakeURL(const SubDomain, Domain, SubResource, Query: string
+  ): string;
+var
+  Qry: String;
 begin
   Result := '';
   if FSignature.Credentials.UseSSL then
@@ -62,28 +68,39 @@ begin
     Result += 'http://';
   if SubDomain <> '' then
     Result += SubDomain + '.';
-  Result += Domain + Query;
+  if Query <> '' then
+    Qry:= '/?' + Query;
+  Result += Domain + SubResource + Qry;
+  WriteLn('Presigned URL: ', Result);
 end;
 
-constructor TAWSClient.Create(Signature: IAWSSignature);
+constructor TAWSClient.Create(Signature: IAWSSignature; ServiceName: string);
 begin
   inherited Create;
   FSignature := Signature;
+  FServiceName:= ServiceName;
 end;
 
-class function TAWSClient.New(Signature: IAWSSignature): IAWSClient;
+class function TAWSClient.New(Signature: IAWSSignature; ServiceName: string
+  ): IAWSClient;
 begin
-  Result := Create(Signature);
+  Result := Create(Signature, ServiceName);
 end;
 
 function TAWSClient.Send(Request: IAWSRequest): IAWSResponse;
+var
+  LQuery, LHeaders: string;
 begin
+  Request.ServiceName := FServiceName;
+  LHeaders:= '';
+  LQuery:= FSignature.CalculateToQuery(Request, LHeaders);
   Result := THTTPSender.New(
-    Request.Method,
-    FSignature.Calculate(Request),
-    Request.ContentType,
-    MakeURL(Request.SubDomain, Request.Domain, Request.Resource),
-    Request.Stream
+     Request.Method,
+     LHeaders ,
+     Request.ContentType,
+     MakeURL(Request.SubDomain, Request.Domain, Request.Resource, LQuery),
+     Request.Stream,
+     FServiceName
   )
   .Send;
 end;

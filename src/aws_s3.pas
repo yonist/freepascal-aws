@@ -26,7 +26,7 @@ uses
   aws_client;
 
 const
-  AWS_S3_URL = 's3.amazonaws.com';
+  AWS_S3_URL = 'amazonaws.com';
 
 type
   ES3Error = class(Exception);
@@ -57,14 +57,20 @@ type
     function Objects: IS3Objects;
   end;
 
+  { IS3Buckets }
+
   IS3Buckets = interface(IInterface)
   ['{8F994521-57A1-4FA6-9F9F-3931E834EFE2}']
     function Check(const BucketName: string): Boolean;
-    function Get(const BucketName, SubResources: string): IS3Bucket;
+    function Get(const BucketName, SubResources, Query: string): IS3Bucket;
     procedure Delete(const BucketName, SubResources: string);
     function Put(const BucketName, SubResources: string): IS3Bucket;
     { TODO : Return a Bucket list }
     function All: IAWSResponse;
+
+    function GetS3Service:IS3Service;
+    procedure SetS3Service(AValue: IS3Service);
+    property S3Service: IS3Service read GetS3Service write SetS3Service;
   end;
 
   IS3Service = interface(IInterface)
@@ -85,6 +91,8 @@ type
     function Name: string;
     function Stream: IAWSStream;
   end;
+
+  { TS3Objects }
 
   TS3Objects = class sealed(TInterfacedObject, IS3Objects)
   private
@@ -114,18 +122,27 @@ type
     function Objects: IS3Objects;
   end;
 
+  { TS3Buckets }
+
   TS3Buckets = class sealed(TInterfacedObject, IS3Buckets)
   private
     FClient: IAWSClient;
+    FS3Service: IS3Service;
   public
     constructor Create(Client: IAWSClient);
     class function New(Client: IAWSClient): IS3Buckets;
     function Check(const BucketName: string): Boolean;
-    function Get(const BucketName, SubResources: string): IS3Bucket;
+    function Get(const BucketName, SubResources, Query: string): IS3Bucket;
     procedure Delete(const BucketName, SubResources: string);
     function Put(const BucketName, SubResources: string): IS3Bucket;
     function All: IAWSResponse;
+
+    function GetS3Service:IS3Service;
+    procedure SetS3Service(AValue: IS3Service);
+    property S3Service: IS3Service read GetS3Service write SetS3Service;
   end;
+
+  { TS3Service }
 
   TS3Service = class sealed(TInterfacedObject, IS3Service)
   private
@@ -135,6 +152,7 @@ type
     class function New(Client: IAWSClient): IS3Service;
     function Online: Boolean;
     function Buckets: IS3Buckets;
+    class function ServiceName: string;
   end;
 
 implementation
@@ -316,17 +334,20 @@ begin
   ).Code = 200;
 end;
 
-function TS3Buckets.Get(const BucketName, SubResources: string): IS3Bucket;
+function TS3Buckets.Get(const BucketName, SubResources, Query: string
+  ): IS3Bucket;
 begin
   with FClient.Send(
     TAWSRequest.New(
-      'GET', BucketName, AWS_S3_URL, '', SubResources, '', '', '', '/' + BucketName + '/' + SubResources
+      'GET', BucketName, TS3Service.ServiceName + '.' + AWS_S3_URL,
+      '', SubResources, Query, '', '', '', '/' + BucketName + '/' + SubResources
     )
   ) do
   begin
     if 200 <> Code then
-      raise ES3Error.CreateFmt('Get error: %d', [Code]);
+      raise ES3Error.CreateFmt('Get error: %d, %s', [Code, Text]);
     Result := TS3Bucket.New(FClient, BucketName);
+    WriteLn(Result.Name);
   end;
 end;
 
@@ -364,6 +385,16 @@ begin
   );
 end;
 
+function TS3Buckets.GetS3Service: IS3Service;
+begin
+  Result := FS3Service;
+end;
+
+procedure TS3Buckets.SetS3Service(AValue: IS3Service);
+begin
+  FS3Service := AValue;
+end;
+
 { TS3Service }
 
 constructor TS3Service.Create(Client: IAWSClient);
@@ -381,7 +412,7 @@ function TS3Service.Online: Boolean;
 begin
   Result := FClient.Send(
     TAWSRequest.New(
-      'GET', '', AWS_S3_URL, '', '', '', '', '', '/'
+      'GET', '', 'pyxis.test.s3.us-east-1.amazonaws.com', '', '', '', '', '', '/'
     )
   ).Code = 200;
 end;
@@ -389,6 +420,11 @@ end;
 function TS3Service.Buckets: IS3Buckets;
 begin
   Result := TS3Buckets.New(FClient);
+end;
+
+class function TS3Service.ServiceName: string;
+begin
+  Result := 's3';
 end;
 
 end.

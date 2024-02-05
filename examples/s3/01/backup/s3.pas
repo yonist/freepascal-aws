@@ -9,7 +9,7 @@ begin
   TS3Service.New(
     TAWSClient.New(
       TAWSSignatureVersion4.New(
-        TAWSCredentials.New('acces_key', 'secret_key', false, 'us-east-1')
+        TAWSCredentials.New('', '', false, 'us-east-1')
       ), TS3Service.ServiceName
     )
   )

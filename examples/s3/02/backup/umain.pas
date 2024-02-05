@@ -71,7 +71,7 @@ begin
         TAWSCredentials.New(
           edtAcessKeyId.Text,
           edtSecretKey.Text,
-          False,
+          True,
           'us-east-1'
         )
       ), 's3'
