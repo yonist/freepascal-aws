@@ -7,6 +7,7 @@
       <Flags>
         <MainUnitHasCreateFormStatements Value="False"/>
         <MainUnitHasTitleStatement Value="False"/>
+        <MainUnitHasScaledStatement Value="False"/>
         <CompatibilityMode Value="True"/>
       </Flags>
       <SessionStorage Value="InProjectDir"/>
@@ -29,13 +30,10 @@
         <Mode0 Name="default"/>
       </Modes>
     </RunParams>
-    <RequiredPackages Count="2">
+    <RequiredPackages Count="1">
       <Item1>
-        <PackageName Value="PascalTZ"/>
-      </Item1>
-      <Item2>
         <PackageName Value="AWS"/>
-      </Item2>
+      </Item1>
     </RequiredPackages>
     <Units Count="1">
       <Unit0>
@@ -48,7 +46,7 @@
     <Version Value="11"/>
     <PathDelim Value="\"/>
     <Target>
-      <Filename Value="..\..\..\bin\s3"/>
+      <Filename Value="..\..\..\bin\s3putObject.exe"/>
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>

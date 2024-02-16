@@ -64,17 +64,19 @@ implementation
 { TfrmMain }
 
 procedure TfrmMain.btnTestAccessClick(Sender: TObject);
+var
+  LSignatureV4: IAWSSignature;
 begin
+  LSignatureV4 := TAWSSignatureVersion4.New(
+                    TAWSCredentials.New(edtAcessKeyId.Text,
+                                        edtSecretKey.Text,
+                                        false,
+                                        'us-east-1'));
+  LSignatureV4.SetSigningType(stHeaders);
+
   FRegion := TS3Service.Create(
     TAWSClient.Create(
-      TAWSSignatureVersion4.New(
-        TAWSCredentials.New(
-          edtAcessKeyId.Text,
-          edtSecretKey.Text,
-          True,
-          'us-east-1'
-        )
-      ), 's3'
+      LSignatureV4, TS3Service.ServiceName
     )
   );
   if FRegion.Online then
@@ -126,7 +128,7 @@ begin
     Exit;
   end;
 
-  Bkt := FRegion.Buckets.Get(edtBucketName.Text, edtBucketSubResource.Text);
+  Bkt := FRegion.Buckets.Get(edtBucketName.Text, edtBucketSubResource.Text, '');
   Bkt.Objects.Put(edtObjectName.Text, edtContentType.Text, fneFile.FileName, edtObjectSubResource.Text);
   ShowMessage('Success!')
 end;
@@ -142,7 +144,7 @@ begin
     Exit;
   end;
 
-  Bkt := FRegion.Buckets.Get(edtBucketName.Text, edtBucketSubResource.Text);
+  Bkt := FRegion.Buckets.Get(edtBucketName.Text, edtBucketSubResource.Text, '');
   Bkt.Objects.Get(
     edtObjectName.Text,
     edtObjectSubResource.Text
@@ -161,7 +163,7 @@ begin
     Exit;
   end;
 
-  Bkt := FRegion.Buckets.Get(edtBucketName.Text, edtBucketSubResource.Text);
+  Bkt := FRegion.Buckets.Get(edtBucketName.Text, edtBucketSubResource.Text, '');
   Bkt.Objects.Put(edtObjectName.Text, edtObjectSubResource.Text);
   ShowMessage('Success!')
 end;
@@ -177,7 +179,7 @@ begin
     Exit;
   end;
 
-  Bkt := FRegion.Buckets.Get(edtBucketName.Text, edtBucketSubResource.Text);
+  Bkt := FRegion.Buckets.Get(edtBucketName.Text, edtBucketSubResource.Text, '');
   Bkt.Objects.Delete(edtObjectName.Text);
   ShowMessage('Success!');
 end;
@@ -189,7 +191,7 @@ end;
 
 procedure TfrmMain.btnBucketGetClick(Sender: TObject);
 begin
-  FRegion.Buckets.Get(edtBucketName.Text, edtBucketSubResource.Text);
+  FRegion.Buckets.Get(edtBucketName.Text, edtBucketSubResource.Text, '');
   ShowMessage('The bucket exists and you have access!')
 end;
 

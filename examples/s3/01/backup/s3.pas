@@ -9,14 +9,11 @@ begin
   TS3Service.New(
     TAWSClient.New(
       TAWSSignatureVersion4.New(
-        TAWSCredentials.New('', '', false, 'us-east-1')
+        TAWSCredentials.New('AKIAQBPS4Q6OCXMMXU7V', 'UDBVkwMBZxrQUy2VHe1ceWUnZLnQIX4sZqC3Z7gW', false, 'us-east-1')
       ), TS3Service.ServiceName
     )
   )
   .Buckets
-  .Get('pyxis.test', '/', '');
-  //.Objects;
-  //.Get('', '');
-  //.Put('ss.png', 'png', 'ss.png', '');
+  .Get('', '/', '');
 end.
 

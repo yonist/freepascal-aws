@@ -1,237 +1,236 @@
 object frmMain: TfrmMain
-  Left = 323
-  Height = 404
-  Top = 144
-  Width = 576
+  Left = 327
+  Height = 485
+  Top = 148
+  Width = 691
   BorderStyle = bsDialog
   Caption = 'AWS S3 Demo'
-  ClientHeight = 404
-  ClientWidth = 576
-  DesignTimePPI = 120
+  ClientHeight = 485
+  ClientWidth = 691
+  DesignTimePPI = 144
   Position = poScreenCenter
   LCLVersion = '3.99.0.0'
   object edtAcessKeyId: TEdit
-    Left = 10
-    Height = 28
-    Top = 32
-    Width = 270
+    Left = 12
+    Height = 33
+    Top = 38
+    Width = 324
     TabOrder = 0
-    Text = 'AKIAQBPS4Q6OCXMMXU7V'
   end
   object Label1: TLabel
-    Left = 10
-    Height = 20
-    Top = 10
-    Width = 89
+    Left = 12
+    Height = 25
+    Top = 12
+    Width = 107
     Caption = 'Access Key Id'
     ParentColor = False
   end
   object Label2: TLabel
-    Left = 290
-    Height = 20
-    Top = 10
-    Width = 69
+    Left = 348
+    Height = 25
+    Top = 12
+    Width = 81
     Caption = 'Secret Key'
     ParentColor = False
   end
   object btnTestAccess: TBitBtn
-    Left = 160
-    Height = 38
-    Top = 70
-    Width = 250
+    Left = 192
+    Height = 46
+    Top = 84
+    Width = 300
     Caption = 'Test access'
     TabOrder = 2
     OnClick = btnTestAccessClick
   end
   object pnlServices: TPanel
-    Left = 11
-    Height = 270
-    Top = 120
-    Width = 551
+    Left = 13
+    Height = 324
+    Top = 144
+    Width = 661
     BevelInner = bvLowered
-    ClientHeight = 270
-    ClientWidth = 551
+    ClientHeight = 324
+    ClientWidth = 661
     TabOrder = 3
     Visible = False
     object Label3: TLabel
-      Left = 28
-      Height = 20
-      Top = 20
-      Width = 44
+      Left = 34
+      Height = 25
+      Top = 24
+      Width = 52
       Caption = 'Bucket'
       ParentColor = False
     end
     object edtBucketName: TEdit
-      Left = 28
-      Height = 28
-      Top = 44
-      Width = 190
+      Left = 34
+      Height = 33
+      Top = 53
+      Width = 228
       CharCase = ecLowerCase
       TabOrder = 0
+      Text = 'pyxis.test'
     end
     object btnBucketCheck: TButton
-      Left = 28
-      Height = 31
-      Top = 80
-      Width = 94
+      Left = 34
+      Height = 37
+      Top = 96
+      Width = 113
       Caption = 'Check'
       TabOrder = 2
       OnClick = btnBucketCheckClick
     end
     object btnBucketCreate: TButton
-      Left = 350
-      Height = 31
-      Top = 80
-      Width = 94
+      Left = 420
+      Height = 37
+      Top = 96
+      Width = 113
       Caption = 'Create'
       TabOrder = 3
       OnClick = btnBucketCreateClick
     end
     object btnBucketDelete: TButton
-      Left = 446
-      Height = 31
-      Top = 80
-      Width = 96
+      Left = 535
+      Height = 37
+      Top = 96
+      Width = 115
       Caption = 'Delete'
       TabOrder = 4
       OnClick = btnBucketDeleteClick
     end
     object fneFile: TFileNameEdit
-      Left = 120
-      Height = 28
-      Top = 220
-      Width = 224
+      Left = 144
+      Height = 33
+      Top = 264
+      Width = 269
       FilterIndex = 0
       HideDirectories = False
-      ButtonWidth = 29
+      ButtonWidth = 35
       NumGlyphs = 1
       MaxLength = 0
       TabOrder = 7
       OnChange = fneFileChange
     end
     object btnFileUpload: TButton
-      Left = 351
-      Height = 31
-      Top = 218
-      Width = 94
+      Left = 421
+      Height = 37
+      Top = 262
+      Width = 113
       Caption = 'Upload'
       TabOrder = 9
       OnClick = btnFileUploadClick
     end
     object edtContentType: TEdit
-      Left = 28
-      Height = 28
-      Top = 220
-      Width = 91
+      Left = 34
+      Height = 33
+      Top = 264
+      Width = 109
       TabOrder = 8
       Text = 'text/plan'
     end
     object btnObjectDelete: TButton
-      Left = 449
-      Height = 31
-      Top = 162
-      Width = 94
+      Left = 539
+      Height = 37
+      Top = 194
+      Width = 113
       Caption = 'Delete'
       TabOrder = 6
       OnClick = btnObjectDeleteClick
     end
     object edtBucketSubResource: TEdit
-      Left = 220
-      Height = 28
-      Top = 44
-      Width = 320
+      Left = 264
+      Height = 33
+      Top = 53
+      Width = 384
       CharCase = ecLowerCase
       TabOrder = 1
     end
     object Label5: TLabel
-      Left = 220
-      Height = 20
-      Top = 20
-      Width = 89
+      Left = 264
+      Height = 25
+      Top = 24
+      Width = 107
       Caption = 'Sub Resource'
       ParentColor = False
     end
     object edtObjectName: TEdit
-      Left = 28
-      Height = 28
-      Top = 164
-      Width = 190
+      Left = 34
+      Height = 33
+      Top = 197
+      Width = 228
       CharCase = ecLowerCase
       TabOrder = 5
     end
     object Label6: TLabel
-      Left = 28
-      Height = 20
-      Top = 140
-      Width = 44
+      Left = 34
+      Height = 25
+      Top = 168
+      Width = 52
       Caption = 'Object'
       ParentColor = False
     end
     object Bevel1: TBevel
-      Left = 22
-      Height = 12
-      Top = 120
-      Width = 520
+      Left = 26
+      Height = 14
+      Top = 144
+      Width = 624
       Shape = bsBottomLine
     end
     object Label7: TLabel
-      Left = 28
-      Height = 20
-      Top = 200
-      Width = 23
+      Left = 34
+      Height = 25
+      Top = 240
+      Width = 26
       Caption = 'File'
       ParentColor = False
     end
     object edtObjectSubResource: TEdit
-      Left = 221
-      Height = 28
-      Top = 164
-      Width = 129
+      Left = 265
+      Height = 33
+      Top = 197
+      Width = 155
       CharCase = ecLowerCase
       TabOrder = 10
     end
     object Label9: TLabel
-      Left = 220
-      Height = 20
-      Top = 140
-      Width = 89
+      Left = 264
+      Height = 25
+      Top = 168
+      Width = 107
       Caption = 'Sub Resource'
       ParentColor = False
     end
     object btnBucketGet: TButton
-      Left = 124
-      Height = 31
-      Top = 80
-      Width = 94
+      Left = 149
+      Height = 37
+      Top = 96
+      Width = 113
       Caption = 'Get'
       TabOrder = 11
       OnClick = btnBucketGetClick
     end
     object btnObjectCreate: TButton
-      Left = 351
-      Height = 31
-      Top = 162
-      Width = 94
+      Left = 421
+      Height = 37
+      Top = 194
+      Width = 113
       Caption = 'Create'
       TabOrder = 12
       OnClick = btnObjectCreateClick
     end
     object btnFileDownload: TButton
-      Left = 449
-      Height = 31
-      Top = 218
-      Width = 94
+      Left = 539
+      Height = 37
+      Top = 262
+      Width = 113
       Caption = 'Download'
       TabOrder = 13
       OnClick = btnFileDownloadClick
     end
   end
   object edtSecretKey: TEdit
-    Left = 290
-    Height = 28
-    Top = 32
-    Width = 272
+    Left = 348
+    Height = 33
+    Top = 38
+    Width = 326
     TabOrder = 1
-    Text = 'UDBVkwMBZxrQUy2VHe1ceWUnZLnQIX4sZqC3Z7gW'
   end
 end

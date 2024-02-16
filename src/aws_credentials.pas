@@ -72,12 +72,16 @@ type
     function RegionName: string;
   end;
 
+  TAWSSigningType = (stHeaders, stQuerystring);
+
   { IAWSSignature }
 
   IAWSSignature = interface
+    procedure SetSigningType(ASigningType: TAWSSigningType);
+    function GetSigningType: TAWSSigningType;
     function Credentials: IAWSCredentials;
     function Calculate(Request: IHTTPRequest): string;
-    function CalculateToQuery(Request: IHTTPRequest; var Headers: string): String;
+    function CalculateToQuery(Request: IHTTPRequest; var Headers: TStringList): String;
   end;
 
   { TAWSCredentials }
@@ -112,12 +116,17 @@ type
   TAWSAbstractSignature = class abstract(TInterfacedObject, IAWSSignature)
   strict private
     FCredentials: IAWSCredentials;
+    FSigningType: TAWSSigningType;
   public
     constructor Create(Credentials: IAWSCredentials);
     class function New(Credentials: IAWSCredentials): IAWSSignature;
+    procedure SetSigningType(ASigningType: TAWSSigningType);
+    function GetSigningType: TAWSSigningType;
     function Credentials: IAWSCredentials;
     function Calculate(Request: IHTTPRequest): string; virtual; abstract;
-    function CalculateToQuery(Request: IHTTPRequest; var Headers: string): String; virtual; abstract;
+    function CalculateToQuery(Request: IHTTPRequest; var Headers: TStringList): String; virtual; abstract;
+
+    property SigningType: TAWSSigningType read GetSigningType write SetSigningType;
   end;
 
   { TAWSSignatureVersion1 }
@@ -125,7 +134,7 @@ type
   TAWSSignatureVersion1 = class sealed(TAWSAbstractSignature)
   public
     function Calculate(Request: IHTTPRequest): string; override;
-    function CalculateToQuery(Request: IHTTPRequest; var Headers: string): String; override;
+    function CalculateToQuery(Request: IHTTPRequest; var Headers: TStringList): String; override;
   end;
 
   { TAWSSignatureVersion3 }
@@ -133,7 +142,7 @@ type
   TAWSSignatureVersion3 = class sealed(TAWSAbstractSignature)
   public
     function Calculate(Request: IHTTPRequest): string; override;
-    function CalculateToQuery(Request: IHTTPRequest; var Headers: string): String; override;
+    function CalculateToQuery(Request: IHTTPRequest; var Headers: TStringList): String; override;
   end;
 
   { TStringListHelper }
@@ -149,8 +158,11 @@ type
     function BuildHeader(const Header: String): String;
     procedure SignedHeaders(const Header: String; var ToSing, ToCanonical: String);
     function CreatePresignedURL(Request: IHTTPRequest): string;
+    function CreateAuthHeaders(Request: IHTTPRequest): TStringList;
+
     function CreateCredentialScope(date, region, service: string): string;
-    function CreateSignedHeaders(Request: IHTTPRequest): String;
+    function CreateSignedHeaders(Request: IHTTPRequest): String; overload;
+    function CreateSignedHeaders(Headers: TStringList): String; overload;
     function CreateCanonicalRequest(Request: IHTTPRequest; Queries, Headers: TStringList;
       Payload: string): string;
     function CreateStringToSign(Request: IHTTPRequest; CanonicalRequest,
@@ -163,7 +175,7 @@ type
     function CreateCanonicalPayload(payload: string): string;
   public
     function Calculate(Request: IHTTPRequest): string; override;
-    function CalculateToQuery(Request: IHTTPRequest; var Headers: string): String; override;
+    function CalculateToQuery(Request: IHTTPRequest; var Headers: TStringList): String; override;
   end;
 
 const
@@ -297,15 +309,17 @@ begin
   query := TStringList.Create;
   header:= TStringList.Create;
   try
+    //query.Add(Request.Query);
     query.Add('X-Amz-Algorithm=' + Algoritimo);
     query.Add('X-Amz-Credential=' + Credentials.AccessKeyId + '/' + CreateCredentialScope(LDateFmt, Credentials.RegionName, Request.ServiceName));
     query.Add('X-Amz-Date=' + LAwsDateTime);
     query.Add('X-Amz-Expires=86400');
     query.Add('X-Amz-SignedHeaders=' + CreateSignedHeaders(Request));
 
-    header.Add('Host=' + Request.SubDomain+ '.' +Request.Domain);
+    header.Add('Host=' + IfThen(Request.SubDomain <> '', Request.SubDomain + '.', '') +Request.Domain);
     LCanonicalRequest:= Trim(CreateCanonicalRequest(Request, query, header, 'UNSIGNED-PAYLOAD'));
     LStringToSign := CreateStringToSign(Request, LCanonicalRequest, LAwsDateTime, LDateFmt);
+
     LSignature := CreateSignature(LDateFmt, Credentials.RegionName, Request.ServiceName, Trim(LStringToSign));
     query.Sort;
     query.StrictDelimiter:= True;
@@ -314,6 +328,50 @@ begin
   finally
     query.Free;
     header.Free;
+  end;
+end;
+
+function TAWSSignatureVersion4.CreateAuthHeaders(Request: IHTTPRequest
+  ): TStringList;
+var
+  header, builders: TStringList;
+  LDateFmt: string;
+  LAwsDateTime: String;
+  LDateUTCNow: TDateTime;
+  LCanonicalRequest, LStringToSign, LSignature: String;
+  i: integer;
+  LHeaderArr: TStringDynArray;
+
+  s: string;
+begin
+  LDateUTCNow:= NowUTC;
+  LDateFmt:= FormatDateTime('yyyymmdd', LDateUTCNow);
+  LAwsDateTime:= FormatDateTime('yyyymmdd', LDateUTCNow)+'T'+FormatDateTime('hhnnss', LDateUTCNow)+'Z';
+  header:= TStringList.Create;
+  builders:= TStringList.Create;
+  Result := TStringList.Create;
+  try
+    header.Add('Host=' +Request.Domain);
+    header.Add('X-Amz-Content-Sha256='+SHA256(''));
+    header.Add('X-Amz-Date=' + LAwsDateTime);
+    LCanonicalRequest:=  Trim(CreateCanonicalRequest(Request, nil, header, ''));
+    s := LCanonicalRequest;
+    LStringToSign := CreateStringToSign(Request, LCanonicalRequest, LAwsDateTime, LDateFmt);
+    s := LStringToSign;
+    LSignature := CreateSignature(LDateFmt, Credentials.RegionName, Request.ServiceName, Trim(LStringToSign));
+    s := LSignature;
+    builders.DelimitedText:= LStringToSign;
+    builders.Delimiter:= #10;
+    header.Delete(header.IndexOfName('Host'));
+    for i := 0 to header.Count - 1 do begin
+      LHeaderArr := SplitString(header[i], '=');
+      Result.Add(LHeaderArr[0]+': '+LHeaderArr[1]);
+    end;
+    Result.Add('Authorization: ' + builders[0] + ' Credential=' + Credentials.AccessKeyId +'/' +
+           builders[2] + ', SignedHeaders=' + CreateSignedHeaders(header) + ', Signature=' + LSignature);
+  finally
+    header.Free;
+    builders.Free;
   end;
 end;
 
@@ -334,6 +392,27 @@ begin
   Result := LSignedHeader;
 end;
 
+function TAWSSignatureVersion4.CreateSignedHeaders(Headers: TStringList
+  ): String;
+var
+  i: integer;
+  Llines: TStringDynArray;
+  tmpHeaders: TStringList;
+begin
+  Result := '';
+  tmpHeaders := TStringList.Create;
+  try
+    for i := 0 to Headers.Count - 1 do begin
+       Llines:= SplitString(Headers[i], '=');
+       tmpHeaders.Add(LowerCase(Llines[0]));
+    end;
+    tmpHeaders.Sort;
+    Result := tmpHeaders.Join(';');
+  finally
+    tmpHeaders.Free;
+  end;
+end;
+
 function TAWSSignatureVersion4.CreateCanonicalRequest(Request: IHTTPRequest;
   Queries, Headers: TStringList; Payload: string): string;
 var
@@ -343,13 +422,26 @@ begin
   Result := '';
   LRes := TStringList.Create;
   try
-    LRes.Add(UpperCase(Request.Method));
-    LRes.Add(CreateCanonicalURI('/'));
-    LRes.Add(CreateCanonicalQueryString(Queries));
-    LRes.Add(CreateCanonicalHeaders(Headers));
-    LRes.Add(CreateSignedHeaders(Request));
-    LRes.Add(CreateCanonicalPayload(Payload));
-    Result := LRes.Join(#10);
+    case SigningType of
+      stQuerystring: begin
+        LRes.Add(UpperCase(Request.Method));
+        LRes.Add(CreateCanonicalURI('/'));
+        LRes.Add(CreateCanonicalQueryString(Queries));
+        LRes.Add(CreateCanonicalHeaders(Headers));
+        LRes.Add(CreateSignedHeaders(Request));
+        LRes.Add(CreateCanonicalPayload(Payload));
+        Result := LRes.Join(#10);
+      end;
+      stHeaders: begin
+        LRes.Add(UpperCase(Request.Method));
+        LRes.Add(CreateCanonicalURI('/')+#10);
+        LRes.Add(CreateCanonicalHeaders(Headers)+#10);
+        LRes.Add(CreateSignedHeaders(Headers));
+        LRes.Add(CreateCanonicalPayload(Payload));
+        Result := LRes.Join(#10);
+      end;
+    end;
+
   finally
     LRes.Free;
   end;
@@ -415,19 +507,35 @@ end;
 function TAWSSignatureVersion4.CreateCanonicalHeaders(Headers: TStringList
   ): string;
 var
-  i: integer;
+  i, j: integer;
+  tmpLine: string;
   Llines: TStringDynArray;
   LRes: TStringList;
 begin
   Result := '';
   LRes := TStringList.Create;
   try
-    for i := 0 to Headers.Count - 1 do begin
-       Llines:= SplitString(Headers[i], '=');
-       LRes.Add(LowerCase(Llines[0])+':'+Llines[1]);
-       //LRes.Add(#10);
+    case SigningType of
+      stQuerystring: begin
+          for i := 0 to Headers.Count - 1 do begin
+             Llines:= SplitString(Headers[i], '=');
+             LRes.Add(LowerCase(Llines[0])+':'+Trim(Llines[1]));
+          end;
+          Result := Trim(LRes.Text) + #10;
+      end;
+      stHeaders: begin
+          for i := 0 to Headers.Count - 1 do begin
+             Llines:= SplitString(Headers[i], '=');
+             tmpLine := Llines[1];
+             if LowerCase(Llines[0]) = 'content-type' then
+                tmpLine := Llines[1]+'; charset=utf-8';
+             LRes.Add(LowerCase(Llines[0])+':'+tmpLine);
+          end;
+          LRes.Sort;
+          Result := LRes.Join(#10);
+      end;
     end;
-    Result := Trim(LRes.Text) + #10;
+
   finally
     LRes.Free;
   end;
@@ -500,10 +608,18 @@ begin
 end;
 
 function TAWSSignatureVersion4.CalculateToQuery(Request: IHTTPRequest;
-  var Headers: string): String;
+  var Headers: TStringList): String;
 begin
-  Headers:= '';
-  Result := CreatePresignedURL(Request);
+  case SigningType of
+    stQuerystring: begin
+       Headers:= nil;
+       Result := CreatePresignedURL(Request);
+    end;
+    stHeaders: begin
+       Headers := CreateAuthHeaders(Request);
+       Result := '';
+    end;
+  end;
 end;
 
 { TAWSCredentials }
@@ -571,6 +687,16 @@ begin
   Result := Create(Credentials);
 end;
 
+procedure TAWSAbstractSignature.SetSigningType(ASigningType: TAWSSigningType);
+begin
+  FSigningType:= ASigningType;
+end;
+
+function TAWSAbstractSignature.GetSigningType: TAWSSigningType;
+begin
+  Result := FSigningType;
+end;
+
 function TAWSAbstractSignature.Credentials: IAWSCredentials;
 begin
   Result := FCredentials;
@@ -605,7 +731,7 @@ begin
 end;
 
 function TAWSSignatureVersion1.CalculateToQuery(Request: IHTTPRequest;
-  var Headers: string): String;
+  var Headers: TStringList): String;
 begin
 
 end;
@@ -625,7 +751,7 @@ begin
 end;
 
 function TAWSSignatureVersion3.CalculateToQuery(Request: IHTTPRequest;
-  var Headers: string): String;
+  var Headers: TStringList): String;
 begin
 
 end;

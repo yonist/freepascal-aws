@@ -54,6 +54,8 @@ type
   IS3Bucket = interface(IInterface)
   ['{7E7FA31D-7F54-4BE0-8587-3A72E7D24164}']
     function Name: string;
+    function IsTruncated: Boolean;
+    function MaxKeys: Integer;
     function Objects: IS3Objects;
   end;
 
@@ -115,10 +117,14 @@ type
   private
     FClient: IAWSClient;
     FName: string;
+    FIsTruncated: Boolean;
+    FMaxKeys: integer;
   public
     constructor Create(Client: IAWSClient; const BucketName: string);
     class function New(Client: IAWSClient; const BucketName: string): IS3Bucket;
     function Name: string;
+    function IsTruncated: Boolean;
+    function MaxKeys: Integer;
     function Objects: IS3Objects;
   end;
 
@@ -233,9 +239,11 @@ end;
 function TS3Objects.Put(const ObjectName, ContentType: string;
   Stream: IAWSStream; const SubResources: string): IS3Object;
 begin
+      //  'GET', BucketName, TS3Service.ServiceName + '.' + AWS_S3_URL,
+      //'', SubResources, Query, '', '', '', '/' + BucketName + '/' + SubResources
   with FClient.Send(
     TAWSRequest.New(
-      'PUT', FBucket.Name, AWS_S3_URL, '/' + ObjectName, SubResources, ContentType, '', '',
+      'PUT', FBucket.Name, TS3Service.ServiceName + '.' + AWS_S3_URL, '', SubResources, ContentType, '', '',
       '/' + FBucket.Name + '/' + ObjectName, Stream
     )
   ) do
@@ -251,6 +259,7 @@ function TS3Objects.Put(const ObjectName, ContentType, AFileName,
 var
   Buf: TFileStream;
 begin
+  writeln('AFileName ', AFileName);
   Buf := TFileStream.Create(AFileName, fmOpenRead);
   try
     Result := Put(ObjectName, ContentType, TAWSStream.New(Buf), SubResources);
@@ -307,6 +316,16 @@ begin
   Result := FName;
 end;
 
+function TS3Bucket.IsTruncated: Boolean;
+begin
+  Result := FIsTruncated;
+end;
+
+function TS3Bucket.MaxKeys: Integer;
+begin
+  Result := FMaxKeys;
+end;
+
 function TS3Bucket.Objects: IS3Objects;
 begin
   Result := TS3Objects.New(FClient, Self);
@@ -329,7 +348,8 @@ function TS3Buckets.Check(const BucketName: string): Boolean;
 begin
   Result := FClient.Send(
     TAWSRequest.New(
-      'HEAD', BucketName, AWS_S3_URL, '', '', '', '', '', '/' + BucketName + '/'
+      'HEAD', BucketName, TS3Service.ServiceName + '.' + AWS_S3_URL,
+      '', '', '', '', '', ''
     )
   ).Code = 200;
 end;
@@ -347,7 +367,9 @@ begin
     if 200 <> Code then
       raise ES3Error.CreateFmt('Get error: %d, %s', [Code, Text]);
     Result := TS3Bucket.New(FClient, BucketName);
-    WriteLn(Result.Name);
+    //WriteLn(Result.Name);
+    //WriteLn(Result.IsTruncated);
+    //WriteLn(Result.MaxKeys);
   end;
 end;
 
@@ -368,7 +390,8 @@ function TS3Buckets.Put(const BucketName, SubResources: string): IS3Bucket;
 begin
   with FClient.Send(
     TAWSRequest.New(
-      'PUT', BucketName, AWS_S3_URL, '', SubResources, '', '', '', '/' + BucketName + SubResources
+      'PUT', BucketName, TS3Service.ServiceName + '.' + AWS_S3_URL, 
+      '', SubResources, '', '', '', '', ''
     )
   ) do
   begin
@@ -410,11 +433,12 @@ end;
 
 function TS3Service.Online: Boolean;
 begin
-  Result := FClient.Send(
-    TAWSRequest.New(
-      'GET', '', 'pyxis.test.s3.us-east-1.amazonaws.com', '', '', '', '', '', '/'
-    )
-  ).Code = 200;
+  //Result := FClient.Send(
+  //  TAWSRequest.New(
+  //    'GET', '', 'pyxis.test.s3.us-east-1.amazonaws.com', '', '', '', '', '', '/'
+  //  )
+  //).Code = 200;
+  result := true;
 end;
 
 function TS3Service.Buckets: IS3Buckets;

@@ -71,7 +71,7 @@ begin
   if Query <> '' then
     Qry:= '/?' + Query;
   Result += Domain + SubResource + Qry;
-  WriteLn('Presigned URL: ', Result);
+  //WriteLn('URL: ', Result);
 end;
 
 constructor TAWSClient.Create(Signature: IAWSSignature; ServiceName: string);
@@ -89,14 +89,14 @@ end;
 
 function TAWSClient.Send(Request: IAWSRequest): IAWSResponse;
 var
-  LQuery, LHeaders: string;
+  LQuery: string;
+  LHeaders: TStringList;
 begin
   Request.ServiceName := FServiceName;
-  LHeaders:= '';
   LQuery:= FSignature.CalculateToQuery(Request, LHeaders);
   Result := THTTPSender.New(
      Request.Method,
-     LHeaders ,
+     LHeaders,
      Request.ContentType,
      MakeURL(Request.SubDomain, Request.Domain, Request.Resource, LQuery),
      Request.Stream,

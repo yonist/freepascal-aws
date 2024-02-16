@@ -174,6 +174,7 @@ type
     constructor Create(const Method, Header, ContentType, URL: string; Stream: IAWSStream); overload;
     constructor Create(const Method: String; Headers: TStringList; ContentType, URL: string; Stream: IAWSStream); overload;
     class function New(const Method, Header, ContentType, URL: string; Stream: IAWSStream; ServiceName: string): IHTTPSender;
+    class function New(const Method: string; Headers: TStringList; ContentType, URL: string; Stream: IAWSStream; ServiceName: string): IHTTPSender;
     destructor Destroy; override;
     function Send: IHTTPResponse;
   end;
@@ -468,6 +469,13 @@ begin
   Result := Create(Method, Header, ContentType, URL, Stream);
 end;
 
+class function THTTPSender.New(const Method: string; Headers: TStringList;
+  ContentType, URL: string; Stream: IAWSStream; ServiceName: string
+  ): IHTTPSender;
+begin
+  Result := Create(Method, Headers, ContentType, URL, Stream);
+end;
+
 destructor THTTPSender.Destroy;
 begin
   FSender.Free;
@@ -477,9 +485,11 @@ end;
 function THTTPSender.Send: IHTTPResponse;
 var
   LDataResp: TStringStream;
+  s: string;
 begin
+  s := FHeaders.Text;
   FSender.Headers.Clear;
-  FSender.Headers.Add(FHeader);
+  FSender.Headers.Assign(FHeaders);
   FSender.MimeType := FContentType;
   FStream.SaveToStream(FSender.Document);
   FSender.HTTPMethod(FMethod, FURL);
