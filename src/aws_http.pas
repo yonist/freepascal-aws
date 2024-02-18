@@ -485,13 +485,20 @@ end;
 function THTTPSender.Send: IHTTPResponse;
 var
   LDataResp: TStringStream;
-  s: string;
+  //i: integer;
+  //s, hdrs: string;
 begin
-  s := FHeaders.Text;
   FSender.Headers.Clear;
   FSender.Headers.Assign(FHeaders);
   FSender.MimeType := FContentType;
   FStream.SaveToStream(FSender.Document);
+
+  //s := 'curl --location --'+FMethod + ' ' +QuotedStr(FUrl);
+  //for i := 0 to FHeaders.Count - 1 do begin
+  //  hdrs := hdrs + ' --header ' + QuotedStr(FHeaders[i]);
+  //end;
+  //s := s + hdrs;
+
   FSender.HTTPMethod(FMethod, FURL);
   Result := THTTPResponse.New(
     FSender.ResultCode,

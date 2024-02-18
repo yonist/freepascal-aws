@@ -91,14 +91,16 @@ function TAWSClient.Send(Request: IAWSRequest): IAWSResponse;
 var
   LQuery: string;
   LHeaders: TStringList;
+  LUrl: string;
 begin
   Request.ServiceName := FServiceName;
   LQuery:= FSignature.CalculateToQuery(Request, LHeaders);
+  LUrl  := MakeURL(Request.SubDomain, Request.Domain, Request.Resource, LQuery);
   Result := THTTPSender.New(
      Request.Method,
      LHeaders,
      Request.ContentType,
-     MakeURL(Request.SubDomain, Request.Domain, Request.Resource, LQuery),
+     LUrl,
      Request.Stream,
      FServiceName
   )

@@ -351,24 +351,22 @@ begin
   builders:= TStringList.Create;
   Result := TStringList.Create;
   try
-    header.Add('Host=' +Request.Domain);
+    header.Add('Host=' + Request.SubDomain + '.' + Request.Domain);
     header.Add('X-Amz-Content-Sha256='+SHA256(''));
     header.Add('X-Amz-Date=' + LAwsDateTime);
     LCanonicalRequest:=  Trim(CreateCanonicalRequest(Request, nil, header, ''));
-    s := LCanonicalRequest;
     LStringToSign := CreateStringToSign(Request, LCanonicalRequest, LAwsDateTime, LDateFmt);
-    s := LStringToSign;
     LSignature := CreateSignature(LDateFmt, Credentials.RegionName, Request.ServiceName, Trim(LStringToSign));
-    s := LSignature;
     builders.DelimitedText:= LStringToSign;
     builders.Delimiter:= #10;
-    header.Delete(header.IndexOfName('Host'));
+    //header.Delete(header.IndexOfName('Host'));
     for i := 0 to header.Count - 1 do begin
       LHeaderArr := SplitString(header[i], '=');
-      Result.Add(LHeaderArr[0]+': '+LHeaderArr[1]);
+      Result.Add(LHeaderArr[0]+':'+LHeaderArr[1]);
     end;
-    Result.Add('Authorization: ' + builders[0] + ' Credential=' + Credentials.AccessKeyId +'/' +
+    Result.Add('Authorization:' + builders[0] + ' Credential=' + Credentials.AccessKeyId +'/' +
            builders[2] + ', SignedHeaders=' + CreateSignedHeaders(header) + ', Signature=' + LSignature);
+    s := Result.Text;
   finally
     header.Free;
     builders.Free;

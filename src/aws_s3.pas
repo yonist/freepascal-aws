@@ -348,7 +348,7 @@ function TS3Buckets.Check(const BucketName: string): Boolean;
 begin
   Result := FClient.Send(
     TAWSRequest.New(
-      'HEAD', BucketName, TS3Service.ServiceName + '.' + AWS_S3_URL,
+      'HEAD', BucketName, TS3Service.ServiceName + '.'+ 'us-east-1.' + AWS_S3_URL,
       '', '', '', '', '', ''
     )
   ).Code = 200;
