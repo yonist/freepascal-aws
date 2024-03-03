@@ -13,6 +13,9 @@ uses
   aws_s3;
 
 type
+
+  { TfrmMain }
+
   TfrmMain = class(TForm)
     edtAcessKeyId: TEdit;
     Label1: TLabel;
@@ -77,7 +80,7 @@ begin
   FRegion := TS3Service.Create(
     TAWSClient.Create(
       LSignatureV4, TS3Service.ServiceName
-    )
+    ), 'us-east-1'
   );
   if FRegion.Online then
   begin
@@ -93,7 +96,7 @@ end;
 procedure TfrmMain.btnBucketCheckClick(Sender: TObject);
 begin
   if FRegion.Buckets.Check(edtBucketName.Text) then
-    ShowMessage('The bucket exists and you have access!')
+    ShowMessage('The bucket exists and you have access! '+ FRegion.Region)
   else
     ShowMessage('Access denied.');
 end;

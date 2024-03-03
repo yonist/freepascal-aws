@@ -79,6 +79,7 @@ type
   ['{B192DB11-4080-477A-80D4-41698832F492}']
     function Online: Boolean;
     function Buckets: IS3Buckets;
+    function Region: string;
   end;
 
   TS3Object = class sealed(TInterfacedObject, IS3Object)
@@ -153,11 +154,13 @@ type
   TS3Service = class sealed(TInterfacedObject, IS3Service)
   private
     FClient: IAWSClient;
+    FRegion: string;
   public
-    constructor Create(Client: IAWSClient);
-    class function New(Client: IAWSClient): IS3Service;
+    constructor Create(Client: IAWSClient; Region: string);
+    class function New(Client: IAWSClient; Region: string): IS3Service;
     function Online: Boolean;
     function Buckets: IS3Buckets;
+    function Region: string;
     class function ServiceName: string;
   end;
 
@@ -348,7 +351,7 @@ function TS3Buckets.Check(const BucketName: string): Boolean;
 begin
   Result := FClient.Send(
     TAWSRequest.New(
-      'HEAD', BucketName, TS3Service.ServiceName + '.'+ 'us-east-1.' + AWS_S3_URL,
+      'HEAD', BucketName, TS3Service.ServiceName + '.' + S3Service.Region + '.' + AWS_S3_URL,
       '', '', '', '', '', ''
     )
   ).Code = 200;
@@ -359,17 +362,14 @@ function TS3Buckets.Get(const BucketName, SubResources, Query: string
 begin
   with FClient.Send(
     TAWSRequest.New(
-      'GET', BucketName, TS3Service.ServiceName + '.' + AWS_S3_URL,
-      '', SubResources, Query, '', '', '', '/' + BucketName + '/' + SubResources
+      'GET', BucketName, TS3Service.ServiceName + '.' + S3Service.Region + '.' + AWS_S3_URL,
+      '', '', '', '', '', ''
     )
   ) do
   begin
     if 200 <> Code then
       raise ES3Error.CreateFmt('Get error: %d, %s', [Code, Text]);
     Result := TS3Bucket.New(FClient, BucketName);
-    //WriteLn(Result.Name);
-    //WriteLn(Result.IsTruncated);
-    //WriteLn(Result.MaxKeys);
   end;
 end;
 
@@ -420,15 +420,16 @@ end;
 
 { TS3Service }
 
-constructor TS3Service.Create(Client: IAWSClient);
+constructor TS3Service.Create(Client: IAWSClient; Region: string);
 begin
   inherited Create;
   FClient := Client;
+  FRegion := Region;
 end;
 
-class function TS3Service.New(Client: IAWSClient): IS3Service;
+class function TS3Service.New(Client: IAWSClient; Region: string): IS3Service;
 begin
-  Result := Create(Client);
+  Result := Create(Client, Region);
 end;
 
 function TS3Service.Online: Boolean;
@@ -444,6 +445,12 @@ end;
 function TS3Service.Buckets: IS3Buckets;
 begin
   Result := TS3Buckets.New(FClient);
+  Result.S3Service := Self;
+end;
+
+function TS3Service.Region: string;
+begin
+  Result := FRegion;
 end;
 
 class function TS3Service.ServiceName: string;

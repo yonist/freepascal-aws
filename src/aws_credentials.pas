@@ -338,11 +338,9 @@ var
   LDateFmt: string;
   LAwsDateTime: String;
   LDateUTCNow: TDateTime;
-  LCanonicalRequest, LStringToSign, LSignature: String;
+  LCanonicalRequest, LStringToSign, LSignature, LSignedHeaders: String;
   i: integer;
   LHeaderArr: TStringDynArray;
-
-  s: string;
 begin
   LDateUTCNow:= NowUTC;
   LDateFmt:= FormatDateTime('yyyymmdd', LDateUTCNow);
@@ -359,14 +357,15 @@ begin
     LSignature := CreateSignature(LDateFmt, Credentials.RegionName, Request.ServiceName, Trim(LStringToSign));
     builders.DelimitedText:= LStringToSign;
     builders.Delimiter:= #10;
-    //header.Delete(header.IndexOfName('Host'));
+    LSignedHeaders:= CreateSignedHeaders(header);
+    // delete Host, since it will added automatically on http client unit
+    header.Delete(header.IndexOfName('Host'));
     for i := 0 to header.Count - 1 do begin
       LHeaderArr := SplitString(header[i], '=');
       Result.Add(LHeaderArr[0]+':'+LHeaderArr[1]);
     end;
     Result.Add('Authorization:' + builders[0] + ' Credential=' + Credentials.AccessKeyId +'/' +
-           builders[2] + ', SignedHeaders=' + CreateSignedHeaders(header) + ', Signature=' + LSignature);
-    s := Result.Text;
+           builders[2] + ', SignedHeaders=' + LSignedHeaders + ', Signature=' + LSignature);
   finally
     header.Free;
     builders.Free;

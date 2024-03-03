@@ -1,7 +1,7 @@
 object frmMain: TfrmMain
-  Left = 330
+  Left = 337
   Height = 485
-  Top = 152
+  Top = 158
   Width = 691
   BorderStyle = bsDialog
   Caption = 'AWS S3 Demo'

@@ -1,7 +1,7 @@
 object frmMain: TfrmMain
-  Left = 327
+  Left = 337
   Height = 485
-  Top = 148
+  Top = 158
   Width = 691
   BorderStyle = bsDialog
   Caption = 'AWS S3 Demo'
@@ -16,6 +16,7 @@ object frmMain: TfrmMain
     Top = 38
     Width = 324
     TabOrder = 0
+    Text = 'AKIAQBPS4Q6OCXMMXU7V'
   end
   object Label1: TLabel
     Left = 12
