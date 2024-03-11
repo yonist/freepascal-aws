@@ -158,7 +158,7 @@ type
     function BuildHeader(const Header: String): String;
     procedure SignedHeaders(const Header: String; var ToSing, ToCanonical: String);
     function CreatePresignedURL(Request: IHTTPRequest): string;
-    function CreateAuthHeaders(Request: IHTTPRequest): TStringList;
+    function CreateAuthHeaders(Request: IHTTPRequest; out QueryResult: string): TStringList;
 
     function CreateCredentialScope(date, region, service: string): string;
     function CreateSignedHeaders(Request: IHTTPRequest): String; overload;
@@ -331,10 +331,10 @@ begin
   end;
 end;
 
-function TAWSSignatureVersion4.CreateAuthHeaders(Request: IHTTPRequest
-  ): TStringList;
+function TAWSSignatureVersion4.CreateAuthHeaders(Request: IHTTPRequest; out
+  QueryResult: string): TStringList;
 var
-  header, builders: TStringList;
+  header, query, builders: TStringList;
   LDateFmt: string;
   LAwsDateTime: String;
   LDateUTCNow: TDateTime;
@@ -346,13 +346,16 @@ begin
   LDateFmt:= FormatDateTime('yyyymmdd', LDateUTCNow);
   LAwsDateTime:= FormatDateTime('yyyymmdd', LDateUTCNow)+'T'+FormatDateTime('hhnnss', LDateUTCNow)+'Z';
   header:= TStringList.Create;
+  query := TStringList.Create;
   builders:= TStringList.Create;
   Result := TStringList.Create;
   try
     header.Add('Host=' + Request.SubDomain + '.' + Request.Domain);
     header.Add('X-Amz-Content-Sha256='+SHA256(''));
     header.Add('X-Amz-Date=' + LAwsDateTime);
-    LCanonicalRequest:=  Trim(CreateCanonicalRequest(Request, nil, header, ''));
+    query.Delimiter := '&';
+    query.DelimitedText:= Request.Query;
+    LCanonicalRequest:=  Trim(CreateCanonicalRequest(Request, query, header, ''));
     LStringToSign := CreateStringToSign(Request, LCanonicalRequest, LAwsDateTime, LDateFmt);
     LSignature := CreateSignature(LDateFmt, Credentials.RegionName, Request.ServiceName, Trim(LStringToSign));
     builders.DelimitedText:= LStringToSign;
@@ -364,10 +367,12 @@ begin
       LHeaderArr := SplitString(header[i], '=');
       Result.Add(LHeaderArr[0]+':'+LHeaderArr[1]);
     end;
+    QueryResult:= Request.Query;
     Result.Add('Authorization:' + builders[0] + ' Credential=' + Credentials.AccessKeyId +'/' +
            builders[2] + ', SignedHeaders=' + LSignedHeaders + ', Signature=' + LSignature);
   finally
     header.Free;
+    query.Free;
     builders.Free;
   end;
 end;
@@ -414,7 +419,7 @@ function TAWSSignatureVersion4.CreateCanonicalRequest(Request: IHTTPRequest;
   Queries, Headers: TStringList; Payload: string): string;
 var
   LRes: TStringList;
-  i: integer;
+  i: integer; test: string;
 begin
   Result := '';
   LRes := TStringList.Create;
@@ -431,7 +436,12 @@ begin
       end;
       stHeaders: begin
         LRes.Add(UpperCase(Request.Method));
-        LRes.Add(CreateCanonicalURI('/')+#10);
+        if Queries.Count = 0 then
+          LRes.Add(CreateCanonicalURI('/')+#10)
+        else begin
+          LRes.Add(CreateCanonicalURI('/'));
+          LRes.Add(CreateCanonicalQueryString(Queries));
+        end;
         LRes.Add(CreateCanonicalHeaders(Headers)+#10);
         LRes.Add(CreateSignedHeaders(Headers));
         LRes.Add(CreateCanonicalPayload(Payload));
@@ -606,6 +616,8 @@ end;
 
 function TAWSSignatureVersion4.CalculateToQuery(Request: IHTTPRequest;
   var Headers: TStringList): String;
+var
+  LQueryResult: string;
 begin
   case SigningType of
     stQuerystring: begin
@@ -613,8 +625,8 @@ begin
        Result := CreatePresignedURL(Request);
     end;
     stHeaders: begin
-       Headers := CreateAuthHeaders(Request);
-       Result := '';
+       Headers := CreateAuthHeaders(Request, LQueryResult);
+       Result := LQueryResult;
     end;
   end;
 end;

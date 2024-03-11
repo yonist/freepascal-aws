@@ -1,11 +1,11 @@
 object frmMain: TfrmMain
-  Left = 337
-  Height = 485
-  Top = 158
+  Left = 518
+  Height = 668
+  Top = 177
   Width = 691
   BorderStyle = bsDialog
   Caption = 'AWS S3 Demo'
-  ClientHeight = 485
+  ClientHeight = 668
   ClientWidth = 691
   DesignTimePPI = 144
   Position = poScreenCenter
@@ -234,5 +234,58 @@ object frmMain: TfrmMain
     Width = 326
     TabOrder = 1
     Text = 'UDBVkwMBZxrQUy2VHe1ceWUnZLnQIX4sZqC3Z7gW'
+  end
+  object pnlListObjectv2: TGroupBox
+    Left = 13
+    Height = 157
+    Top = 480
+    Width = 661
+    Caption = 'ListObjectsV2'
+    ClientHeight = 127
+    ClientWidth = 657
+    TabOrder = 4
+    Visible = False
+    object Button1: TButton
+      Left = 269
+      Height = 37
+      Top = 25
+      Width = 144
+      Caption = 'List of object'
+      TabOrder = 0
+      OnClick = Button1Click
+    end
+    object Button2: TButton
+      Left = 269
+      Height = 37
+      Top = 77
+      Width = 113
+      Caption = 'Back'
+      TabOrder = 1
+    end
+    object Button3: TButton
+      Left = 394
+      Height = 37
+      Top = 77
+      Width = 113
+      Caption = 'Next'
+      TabOrder = 2
+    end
+    object Label4: TLabel
+      Left = 31
+      Height = 25
+      Top = 0
+      Width = 52
+      Caption = 'Bucket'
+      ParentColor = False
+    end
+    object edtBucketName1: TEdit
+      Left = 31
+      Height = 33
+      Top = 29
+      Width = 228
+      CharCase = ecLowerCase
+      TabOrder = 3
+      Text = 'pyxis.test'
+    end
   end
 end

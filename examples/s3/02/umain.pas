@@ -17,10 +17,16 @@ type
   { TfrmMain }
 
   TfrmMain = class(TForm)
+    Button1: TButton;
+    Button2: TButton;
+    Button3: TButton;
     edtAcessKeyId: TEdit;
+    edtBucketName1: TEdit;
+    pnlListObjectv2: TGroupBox;
     Label1: TLabel;
     Label2: TLabel;
     btnTestAccess: TBitBtn;
+    Label4: TLabel;
     pnlServices: TPanel;
     Label3: TLabel;
     edtBucketName: TEdit;
@@ -49,6 +55,7 @@ type
     procedure btnBucketDeleteClick(Sender: TObject);
     procedure btnFileUploadClick(Sender: TObject);
     procedure btnObjectDeleteClick(Sender: TObject);
+    procedure Button1Click(Sender: TObject);
     procedure fneFileChange(Sender: TObject);
     procedure btnBucketGetClick(Sender: TObject);
     procedure btnObjectCreateClick(Sender: TObject);
@@ -85,10 +92,12 @@ begin
   if FRegion.Online then
   begin
     pnlServices.Visible := True;
+    pnlListObjectv2.Visible:= True;
   end
   else
   begin
     pnlServices.Visible := False;
+    pnlListObjectv2.Visible:= False;
     ShowMessage('Access denied.');
   end;
 end;
@@ -185,6 +194,17 @@ begin
   Bkt := FRegion.Buckets.Get(edtBucketName.Text, edtBucketSubResource.Text, '');
   Bkt.Objects.Delete(edtObjectName.Text);
   ShowMessage('Success!');
+end;
+
+procedure TfrmMain.Button1Click(Sender: TObject);
+var
+  Bkt: IS3Bucket;
+  Objs: IS3Objects;
+begin
+  Bkt := FRegion.Buckets.Get(edtBucketName1.Text, '', '');
+  // currently there is no xml processing, so you have to add continuationToken manually
+  Objs := Bkt.ObjectsV2('', 1);
+  ShowMessage('The bucket exists and you have access!')
 end;
 
 procedure TfrmMain.fneFileChange(Sender: TObject);

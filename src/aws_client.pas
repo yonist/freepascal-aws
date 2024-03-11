@@ -71,7 +71,6 @@ begin
   if Query <> '' then
     Qry:= '/?' + Query;
   Result += Domain + SubResource + Qry;
-  //WriteLn('URL: ', Result);
 end;
 
 constructor TAWSClient.Create(Signature: IAWSSignature; ServiceName: string);

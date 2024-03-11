@@ -56,7 +56,9 @@ type
     function Name: string;
     function IsTruncated: Boolean;
     function MaxKeys: Integer;
+    function Region: string;
     function Objects: IS3Objects;
+    function ObjectsV2(AContinuationToken: string; AMaxKeys: integer): IS3Objects;
   end;
 
   { IS3Buckets }
@@ -114,19 +116,24 @@ type
 
   TS3Service = class;
 
+  { TS3Bucket }
+
   TS3Bucket = class sealed(TInterfacedObject, IS3Bucket)
   private
     FClient: IAWSClient;
     FName: string;
     FIsTruncated: Boolean;
     FMaxKeys: integer;
+    FRegion: string;
   public
-    constructor Create(Client: IAWSClient; const BucketName: string);
-    class function New(Client: IAWSClient; const BucketName: string): IS3Bucket;
+    constructor Create(Client: IAWSClient; Region: string; const BucketName: string);
+    class function New(Client: IAWSClient; Region: string; const BucketName: string): IS3Bucket;
     function Name: string;
     function IsTruncated: Boolean;
     function MaxKeys: Integer;
+    function Region: string;
     function Objects: IS3Objects;
+    function ObjectsV2(AContinuationToken: string; AMaxKeys: integer): IS3Objects;
   end;
 
   { TS3Buckets }
@@ -216,7 +223,8 @@ function TS3Objects.Get(const ObjectName: string; const SubResources: string): I
 begin
   with FClient.Send(
     TAWSRequest.New(
-      'GET', FBucket.Name, AWS_S3_URL, '/' + ObjectName, '/' + FBucket.Name + '/' + ObjectName + SubResources
+      'GET', FBucket.Name, TS3Service.ServiceName + '.' + FBucket.Region + '.' + AWS_S3_URL,
+      '/' + ObjectName, '/' + FBucket.Name + '/' + ObjectName + SubResources
     )
   ) do
   begin
@@ -302,16 +310,19 @@ end;
 
 { TS3Bucket }
 
-constructor TS3Bucket.Create(Client: IAWSClient; const BucketName: string);
+constructor TS3Bucket.Create(Client: IAWSClient; Region: string;
+  const BucketName: string);
 begin
   inherited Create;
   FClient := Client;
   FName := BucketName;
+  FRegion:= Region;
 end;
 
-class function TS3Bucket.New(Client: IAWSClient; const BucketName: string): IS3Bucket;
+class function TS3Bucket.New(Client: IAWSClient; Region: string;
+  const BucketName: string): IS3Bucket;
 begin
-  Result := Create(Client, BucketName);
+  Result := Create(Client, Region ,BucketName);
 end;
 
 function TS3Bucket.Name: string;
@@ -329,9 +340,30 @@ begin
   Result := FMaxKeys;
 end;
 
+function TS3Bucket.Region: string;
+begin
+  Result := FRegion;
+end;
+
 function TS3Bucket.Objects: IS3Objects;
 begin
   Result := TS3Objects.New(FClient, Self);
+end;
+
+function TS3Bucket.ObjectsV2(AContinuationToken: string; AMaxKeys: integer
+  ): IS3Objects;
+begin
+  with FClient.Send(
+    TAWSRequest.New(
+      'GET', Name, TS3Service.ServiceName + '.' + FRegion + '.' + AWS_S3_URL,
+      '', '', 'list-type=2&max-keys='+IntToStr(AMaxKeys), '', '', '', ''
+    )
+  ) do
+  begin
+    if 200 <> Code then
+      raise ES3Error.CreateFmt('Get error: %d', [Code]);
+    //Result := TS3Objects.New(FClient, Name);
+  end;
 end;
 
 { TS3Buckets }
@@ -369,7 +401,7 @@ begin
   begin
     if 200 <> Code then
       raise ES3Error.CreateFmt('Get error: %d, %s', [Code, Text]);
-    Result := TS3Bucket.New(FClient, BucketName);
+    Result := TS3Bucket.New(FClient, S3Service.Region, BucketName);
   end;
 end;
 
@@ -397,7 +429,7 @@ begin
   begin
     if 200 <> Code then
       raise ES3Error.CreateFmt('Put error: %d', [Code]);
-    Result := TS3Bucket.New(FClient, BucketName);
+    Result := TS3Bucket.New(FClient, FS3Service.Region, BucketName);
   end;
 end;
 

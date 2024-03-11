@@ -13,7 +13,8 @@ uses
 {$R *.res}
 
 begin
-  Application.Title := 'AWS S3 Demo';
+  Application.Scaled:=True;
+  Application.Title:='AWS S3 Demo';
   RequireDerivedFormResource := True;
   Application.Initialize;
   Application.CreateForm(TfrmMain, frmMain);
