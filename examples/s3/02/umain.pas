@@ -22,6 +22,7 @@ type
     Button3: TButton;
     edtAcessKeyId: TEdit;
     edtBucketName1: TEdit;
+    Memo1: TMemo;
     pnlListObjectv2: TGroupBox;
     Label1: TLabel;
     Label2: TLabel;
@@ -204,7 +205,8 @@ begin
   Bkt := FRegion.Buckets.Get(edtBucketName1.Text, '', '');
   // currently there is no xml processing, so you have to add continuationToken manually
   Objs := Bkt.ObjectsV2('', 1);
-  ShowMessage('The bucket exists and you have access!')
+  ShowMessage('SUCCESS !');
+  Memo1.Text:= Objs.ResponseAsString;
 end;
 
 procedure TfrmMain.fneFileChange(Sender: TObject);

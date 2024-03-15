@@ -41,6 +41,8 @@ type
     function Stream: IAWSStream;
   end;
 
+  { IS3Objects }
+
   IS3Objects = interface(IInterface)
   ['{0CDE7D8E-BA30-4FD4-8FC0-F8291131652E}']
     function Get(const ObjectName: string; const SubResources: string): IS3Object;
@@ -49,6 +51,8 @@ type
     function Put(const ObjectName, ContentType, AFileName, SubResources: string): IS3Object;
     function Put(const ObjectName, SubResources: string): IS3Object;
     function Options(const ObjectName: string): IS3Object;
+    procedure SetResponseString(AValue: string);
+    function ResponseAsString: string;
   end;
 
   IS3Bucket = interface(IInterface)
@@ -103,6 +107,7 @@ type
   private
     FClient: IAWSClient;
     FBucket: IS3Bucket;
+    FResponseString: string;
   public
     constructor Create(Client: IAWSClient; Bucket: IS3Bucket);
     class function New(Client: IAWSClient; Bucket: IS3Bucket): IS3Objects;
@@ -112,6 +117,8 @@ type
     function Put(const ObjectName, ContentType, AFileName, SubResources: string): IS3Object;
     function Put(const ObjectName, SubResources: string): IS3Object;
     function Options(const ObjectName: string): IS3Object;
+    procedure SetResponseString(AValue: string);
+    function ResponseAsString: string;
   end;
 
   TS3Service = class;
@@ -135,6 +142,7 @@ type
     function Objects: IS3Objects;
     function ObjectsV2(AContinuationToken: string; AMaxKeys: integer): IS3Objects;
   end;
+
 
   { TS3Buckets }
 
@@ -308,6 +316,16 @@ begin
   end;
 end;
 
+procedure TS3Objects.SetResponseString(AValue: string);
+begin
+  FResponseString:= AValue;
+end;
+
+function TS3Objects.ResponseAsString: string;
+begin
+  Result := FResponseString;
+end;
+
 { TS3Bucket }
 
 constructor TS3Bucket.Create(Client: IAWSClient; Region: string;
@@ -352,17 +370,27 @@ end;
 
 function TS3Bucket.ObjectsV2(AContinuationToken: string; AMaxKeys: integer
   ): IS3Objects;
+var
+  LStrStream: TStringStream;
 begin
   with FClient.Send(
     TAWSRequest.New(
       'GET', Name, TS3Service.ServiceName + '.' + FRegion + '.' + AWS_S3_URL,
-      '', '', 'list-type=2&max-keys='+IntToStr(AMaxKeys), '', '', '', ''
+      '', '', 'list-type=2&max-keys='+IntToStr(AMaxKeys), '', '', '', '', TAWSStream.New
     )
   ) do
   begin
     if 200 <> Code then
       raise ES3Error.CreateFmt('Get error: %d', [Code]);
-    //Result := TS3Objects.New(FClient, Name);
+
+    Result := TS3Objects.New(FClient, Self);
+    LStrStream := TStringStream.Create('');
+    try
+       Stream.SaveToStream(LStrStream);
+       Result.SetResponseString(LStrStream.DataString);
+    finally
+      LStrStream.Free;
+    end;
   end;
 end;
 
